@@ -70,4 +70,8 @@ if __name__ == "__main__":
     devices = conn.get_devices()
 
     headers = ["Name", "System-IP", "Board-serial", "Model", "Software version"]
-    print(tabulate.tabulate(devices, headers, tablefmt="fancy_grid"))
+
+    try:
+        print(tabulate.tabulate(devices, headers, tablefmt="fancy_grid"))
+    except UnicodeEncodeError:
+        print(tabulate.tabulate(devices, headers, tablefmt="grid"))
