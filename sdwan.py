@@ -28,9 +28,9 @@ class Connector:
 
     def get_token(self):
         url = self.base_url + "dataservice/client/token"
-        header = {"Cookie": self.session_cookie}
+        headers = {"Cookie": self.session_cookie}
 
-        response = requests.get(url, headers=header)
+        response = requests.get(url, headers=headers)
         if response.status_code != 200:
             print("Cannot get a token")
             return 0
@@ -38,12 +38,12 @@ class Connector:
         return 1
 
     @property
-    def header(self):
+    def headers(self):
         return {"Cookie": self.session_cookie, "X-XSRF-TOKEN": self.token}
     
     def get_devices(self):
         url = self.base_url + "dataservice/device"
-        response = requests.get(url, headers=self.header)
+        response = requests.get(url, headers=self.headers)
         devices = []
 
         if response.status_code != 200:
