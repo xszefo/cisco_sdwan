@@ -63,8 +63,34 @@ class Connector:
                 ]
             )
         return devices
+    
+    def get_templates(self):
+        url = self.base_url + 'dataservice/template/device'
+        params = {'feature': 'all'}
+        templates = []
 
+        response = requests.get(url, headers=self.headers, params=params)
+        if response.status_code != 200:
+            print(response.status_code)
+            print(response.text)
+            print('Blad pobierania listy templatek')
+            return 0
 
+        items = response.json()['data']
+
+        for item in items:
+            templates.append(
+                [
+                     item['templateName'],
+                     item['deviceType'],
+                     item['templateId'],
+                     item['devicesAttached'],
+                     item['templateAttached']
+                ]
+            )
+        return templates
+
+    
 if __name__ == "__main__":
     base_url = "https://sandbox-sdwan-2.cisco.com/"
 
