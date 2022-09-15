@@ -2,8 +2,7 @@
 
 import requests
 import tabulate
-from creds import username, password
-
+import creds
 
 class Connector:
     def __init__(self, username, password, base_url):
@@ -41,66 +40,100 @@ class Connector:
     def headers(self):
         return {"Cookie": self.session_cookie, "X-XSRF-TOKEN": self.token}
     
-    def get_devices(self):
-        url = self.base_url + "dataservice/device"
-        response = requests.get(url, headers=self.headers)
-        devices = []
-
+    def get_data(self, path, params=None):
+        url = self.base_url + path
+        
+        response = requests.get(url, headers=self.headers, params=params)
         if response.status_code != 200:
             print(response.status_code)
             print(response.text)
-            print("Cannot get details of the devices")
-            return 0
+            exit()
 
-        for device in response.json()["data"]:
+        items = response.json()['data']
+        return items
+
+    def get_devices(self):
+        devices = []
+        items = self.get_data('dataservice/device')
+
+        for item in items:
             devices.append(
                 [
-                    device["host-name"],
-                    device["system-ip"],
-                    device["board-serial"],
-                    device["device-model"],
-                    device["version"],
+                    item['deviceId'],
+                    item['host-name'],
+                    item['site-id'],
+                    item['system-ip'],
+                    item['board-serial'],
+                    item['device-model'],
+                    item['version'],
                 ]
             )
         return devices
     
     def get_templates(self):
-        url = self.base_url + 'dataservice/template/device'
-        params = {'feature': 'all'}
         templates = []
-
-        response = requests.get(url, headers=self.headers, params=params)
-        if response.status_code != 200:
-            print(response.status_code)
-            print(response.text)
-            print('Blad pobierania listy templatek')
-            return 0
-
-        items = response.json()['data']
-
+        params = {'feature': 'all'}
+        items = self.get_data('dataservice/template/device', params)
+        
         for item in items:
             templates.append(
                 [
+                     item['templateId'],
                      item['templateName'],
                      item['deviceType'],
-                     item['templateId'],
                      item['devicesAttached'],
                      item['templateAttached']
                 ]
             )
         return templates
 
+    def get_features(self):
+        features = []
+        items = self.get_data('dataservice/template/feature')
+
+        for item in items:
+            features.append(
+                    [
+                        item['templateId'],
+                        item['templateName'],
+                        item['templateType']
+                    ]
+            )
+        return features
+
+    def get_devices_by_template(self, template_id):
+        devices = []
+        path = f'dataservice/template/device/config/attached/{template_id}'
+        items = self.get_data(path)
+
+        for item in items:
+            devices.append(
+                    [
+                        item['uuid'],
+                        item['host-name'],
+                        item['deviceIP'],
+                        item['site-id'],
+                    ]
+            )
+        return devices
     
-if __name__ == "__main__":
-    base_url = "https://sandbox-sdwan-2.cisco.com/"
-
-    conn = Connector(username, password, base_url)
+if __name__ == '__main__':
+    conn = Connector(creds.username, creds.password, creds.base_url)
     conn.connect()
-    devices = conn.get_devices()
 
-    headers = ["Name", "System-IP", "Board-serial", "Model", "Software version"]
+    #devices = conn.get_devices()
+    #headers = ['Device ID', 'Name', 'Site-ID', 'System-IP', 'Board-serial', 'Model', 'Software version']
+    #print(tabulate.tabulate(devices, headers, tablefmt='fancy_grid'))
 
-    try:
-        print(tabulate.tabulate(devices, headers, tablefmt="fancy_grid"))
-    except UnicodeEncodeError:
-        print(tabulate.tabulate(devices, headers, tablefmt="grid"))
+    #templates = conn.get_templates()
+    #headers = [""Template ID", Template Name", "Device Type","Attached devices", "Template version"]
+    #print(tabulate.tabulate(templates, headers, tablefmt="fancy_grid"))
+
+    #features = conn.get_features()
+    #headers = ['Template ID', 'Template Name', 'Template Type']
+    #print(tabulate.tabulate(features, headers, tablefmt='fancy_grid'))
+
+    template_id = 'b7ccd31e-0e59-417d-8f52-72fc9106060a'
+    attached_devices = conn.get_devices_by_template(template_id)
+    headers = ['UUID', 'Name', 'IP', 'Site-ID']
+    print(tabulate.tabulate(attached_devices, headers, tablefmt='fancy_grid'))
