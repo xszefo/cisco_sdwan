@@ -67,6 +67,7 @@ class Connector:
                     item['board-serial'],
                     item['device-model'],
                     item['version'],
+                    item['uuid'],
                 ]
             )
         return devices
@@ -118,6 +119,11 @@ class Connector:
             )
         return devices
 
+    def get_running_config(self, device_id):
+        path = f'dataservice/template/config/running/{device_id}'
+        items = self.get_data(path)
+        return items
+
 @click.group()
 def cli():
     pass
@@ -128,7 +134,7 @@ def get_devices():
     conn.connect()
 
     devices = conn.get_devices()
-    headers = ['Device ID', 'Name', 'Site-ID', 'System-IP', 'Board-serial', 'Model', 'Software version']
+    headers = ['Device ID', 'Name', 'Site-ID', 'System-IP', 'Board-serial', 'Model', 'Software version', 'UUID']
     print(tabulate.tabulate(devices, headers, tablefmt='fancy_grid'))
 
 @click.command()
@@ -160,10 +166,21 @@ def get_devices_by_template(template):
     headers = ['UUID', 'Name', 'IP', 'Site-ID']
     print(tabulate.tabulate(attached_devices, headers, tablefmt='fancy_grid'))
 
+@click.command()
+@click.option('-d', '--deviceID', type=str, required=True, help='Device ID')
+def get_running_config(deviceid):
+    conn = Connector(creds.username, creds.password, creds.base_url)
+    conn.connect()
+
+    attached_devices = conn.get_running_config(deviceid)
+    headers = ['UUID', 'Name', 'IP', 'Site-ID']
+    print(tabulate.tabulate(attached_devices, headers, tablefmt='fancy_grid'))
+
 cli.add_command(get_devices)
 cli.add_command(get_templates)
 cli.add_command(get_features)
 cli.add_command(get_devices_by_template)
+cli.add_command(get_running_config)
 
 if __name__ == '__main__':
     cli()
