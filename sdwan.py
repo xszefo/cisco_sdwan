@@ -5,6 +5,9 @@ import tabulate
 import click
 import creds
 
+import urllib3
+urllib3.disable_warnings()
+
 class Connector:
     def __init__(self, username, password, base_url):
         self.username = username
@@ -19,7 +22,7 @@ class Connector:
         url = self.base_url + 'j_security_check'
         payload = {'j_username': self.username, 'j_password': self.password}
 
-        response = requests.post(url, data=payload)
+        response = requests.post(url, data=payload, verify=False)
         if response.status_code != 200:
             print('Cannot download a cookie')
             return 0
@@ -30,7 +33,7 @@ class Connector:
         url = self.base_url + 'dataservice/client/token'
         headers = {'Cookie': self.session_cookie}
 
-        response = requests.get(url, headers=headers)
+        response = requests.get(url, headers=headers, verify=False)
         if response.status_code != 200:
             print('Cannot get a token')
             return 0
@@ -44,7 +47,7 @@ class Connector:
     def get_data(self, path, params=None):
         url = self.base_url + path
         
-        response = requests.get(url, headers=self.headers, params=params)
+        response = requests.get(url, headers=self.headers, params=params, verify=False)
         if response.status_code != 200:
             print(response.status_code)
             print(response.text)
@@ -172,9 +175,9 @@ def get_running_config(deviceid):
     conn = Connector(creds.username, creds.password, creds.base_url)
     conn.connect()
 
-    attached_devices = conn.get_running_config(deviceid)
-    headers = ['UUID', 'Name', 'IP', 'Site-ID']
-    print(tabulate.tabulate(attached_devices, headers, tablefmt='fancy_grid'))
+    running_config = conn.get_running_config(deviceid)
+    print(running_config)
+    
 
 cli.add_command(get_devices)
 cli.add_command(get_templates)
